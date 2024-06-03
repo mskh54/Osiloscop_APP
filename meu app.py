@@ -189,9 +189,6 @@ class App(customtkinter.CTk):
 
         self.select_frame_by_name("home")
 
-    # def print_app(self):
-    #     print("print in class app")
-    #     print("flag : ",self.global_flag)
 
     def update_plot_offline(self):
         self.x_values = list(range(len(self.data_buffer)))
@@ -312,13 +309,23 @@ class App(customtkinter.CTk):
 
     
     def button_start_callback(self):
-        self.flag_start = True
-        self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + f"  ->  starting oscop ...  \n" )
+        if self.flag_start == True:
+            tkinter.messagebox.showinfo("Success", " Oscop was start ...???")
+        elif self.serial_port_status:
+            self.flag_start = True
+            self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + f"  ->  starting oscop ...  \n" )
+        else:
+            tkinter.messagebox.showerror("Error", " Please Connect to Device")
+
 
 
     def button_stop_callback(self):
-        self.flag_start  = False
-        self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + f"  ->  oscop is stop \n" )
+        if self.flag_start:
+            self.flag_start  = False
+            self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + f"  ->  oscop is stop \n" )
+        else:
+            tkinter.messagebox.showinfo("Success", " Oscop was Stop ...???")
+
 
        
     def button_saveplot_callback(self):
@@ -365,31 +372,35 @@ class Plot_setting_Frame(customtkinter.CTkFrame):
         self.grid_rowconfigure(0, weight=0)
         self.grid_columnconfigure(0, weight=1)
 
-        self.label = customtkinter.CTkLabel(self,corner_radius=0, text=self.header_name, font=(FONT_TYPE, 11))
-        self.label.grid(row=0, column=0, padx=20, sticky="nw")
+        self.label = customtkinter.CTkLabel(self,corner_radius=0, text=self.header_name, font=(FONT_TYPE, 16))
+        self.label.grid(row=0, column=0, padx=20, sticky="nwe")
 
-        self.combobox_label = customtkinter.CTkLabel(self, text="type line", font=(FONT_TYPE, 13))
-        self.combobox_label.grid(row=3, column=0, padx=20, pady=(20,0), sticky="ew")
+        self.combobox_label = customtkinter.CTkLabel(self, text="Sample time", font=(FONT_TYPE, 15))
+        self.combobox_label.grid(row=1, column=0, padx=20, pady=(10,0), sticky="w")
 
-        self.combobox = customtkinter.CTkComboBox(master=self,corner_radius=0, font=self.fonts,
-                                     values=["line", "dashed", "line + marker"],
-                                     command=self.combobox_callback)
-        self.combobox.grid(row=4, column=0, padx=20, pady=(0,20), sticky="ew")
-       
         self.sampletime_menu = customtkinter.CTkOptionMenu(self,
                                                          dynamic_resizing=False,
                                                         values=["8M","500K","50k","Realtime"],
                                                         command=self.sampletime_func)
-        self.sampletime_menu.grid(row=1, column=0, padx=20, pady=(20, 10))
+        self.sampletime_menu.grid(row=2, column=0, padx=20, pady=(0, 10))
 
+        self.combobox_label = customtkinter.CTkLabel(self, text="type line", font=(FONT_TYPE, 15))
+        self.combobox_label.grid(row=3, column=0, padx=20, pady=(10,0), sticky="w")
+
+        self.combobox = customtkinter.CTkOptionMenu(master=self, font=self.fonts,
+                                     values=["line", "dashed", "line + marker"],
+                                     command=self.combobox_callback)
+        self.combobox.grid(row=4, column=0, padx=20, pady=(0,20), sticky="ew")
+       
+        
         self.button_open = customtkinter.CTkButton(master=self, command=self.start, text="Start", hover_color="green",width=100 , font=self.fonts)
-        self.button_open.grid(row=5, column=0, padx=10, pady=(0,10))
+        self.button_open.grid(row=5, column=0, padx=10, pady=(0,20))
         
         self.button_open = customtkinter.CTkButton(master=self, command=self.stop, text="Stop",hover_color="red" ,width=100 , font=self.fonts)
-        self.button_open.grid(row=6, column=0, padx=10, pady=(0,10))
+        self.button_open.grid(row=6, column=0, padx=10, pady=(0,20))
 
         self.button_open = customtkinter.CTkButton(master=self, command=self.save_plot, text="Save Plot" ,width=100 , font=self.fonts)
-        self.button_open.grid(row=7, column=0, padx=10, pady=(0,10))
+        self.button_open.grid(row=7, column=0, padx=10, pady=(0,20))
 
     
     def slider_event(self, value):
