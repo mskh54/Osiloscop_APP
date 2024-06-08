@@ -199,6 +199,24 @@ class App(customtkinter.CTk):
         self.ax.relim()
         self.ax.autoscale_view()
         self.canvas.draw()
+    # def update_realtime_plot(self, frame):
+    #     try:
+    #         if  self.serial_port_status & self.flag_start:
+    #             # Read and decode serial data
+    #             lsb = int.from_bytes(self.serial_port.read(), "big")
+    #             msb = int.from_bytes(self.serial_port.read(), "big")
+    #             number = (msb<<8) | lsb
+    #             value = (number/4096)*3.3
+                
+    #             # Update the data buffer
+    #             self.data_buffer.append(value)
+    #             if len(self.data_buffer) > self.timediv:  # Keep a limited number of points
+    #                 self.data_buffer.pop(0)
+    #                 self.times += 1
+    #             self.update_plot_offline()
+    #     except Exception as e:
+    #         print(f"Error: {e}")
+ 
 
     def update_plot(self, frame):
         try:
@@ -208,20 +226,13 @@ class App(customtkinter.CTk):
                 for i in range(self.Numbers_get_sample):
                     lsb = int.from_bytes(self.serial_port.read(), "big")
                     msb = int.from_bytes(self.serial_port.read(), "big")
-                    print(lsb , msb)
                     number = (msb<<8) | lsb
-                    print(number)
                     value = (number/4096)*3.3
-                    print(value)
                     if self.sampletime != "8M":
                         lsb = int.from_bytes(self.serial_port.read(), "big")
                         msb = int.from_bytes(self.serial_port.read(), "big")
                     
-                    # Update the data buffer
                     self.data_buffer.append(value)
-                # if len(self.data_buffer) > self.timediv:  # Keep a limited number of points
-                #     self.data_buffer.pop(0)
-                #     self.times += 1
                 self.update_plot_offline()
         except Exception as e:
             print(f"Error: {e}")
@@ -258,8 +269,8 @@ class App(customtkinter.CTk):
         else:
             return None
 
-    def serial_print(self):
-        self.textbox.insert('end',self.serial_port.readline())
+    # def serial_print(self):
+    #     self.textbox.insert('end',self.serial_port.readline())
 
     def select_serial_port(self,port_name):
         self.real_port = ['select port']
@@ -295,7 +306,7 @@ class App(customtkinter.CTk):
                 self.serial_port.write("H".encode())
 
                 
-                self.textbox.insert('end', datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") +"  ->  " + self.serial_port.readline().decode())
+                self.textbox.insert('end', datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") +"  ->  oscop started " ) #self.serial_port.readline().decode()
 
             except Exception as e:
                 print('error is ',e )
@@ -340,7 +351,6 @@ class App(customtkinter.CTk):
             tkinter.messagebox.showerror("Error", " Please Connect to Device")
 
 
-
     def button_stop_callback(self):
         if self.flag_start:
             self.flag_start  = False
@@ -368,38 +378,17 @@ class App(customtkinter.CTk):
     def select_sampletime(self,sampletime):
         print("sample time is :",sampletime)
         self.sampletime = sampletime
-        self.serial_port.write("S".encode())
-        time.sleep(0.5)
-        # self.serial_port.reset_input_buffer()
-        # self.serial_port.reset_output_buffer()
-
+        # self.serial_port.write("S".encode())
         if sampletime == "8M":
             self.serial_port.write("A".encode())
             # self.serial_port.write(bin(self.Numbers_get_sample))
         else :
             self.serial_port.write("a".encode())
             # self.serial_port.write(bin(self.Numbers_get_sample))
-        
+        self.serial_port.read_all()
 
-        # self.serial_port.close()
-        # self.serial_port = serial.Serial( self.selectport, baudrate=115200)
-        # test=  self.serial_port.read_all()
-        # self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + '  ->  selected '+f" {sampletime} " + " sampletime Succesfully\n")
-        
-        # print(self.serial_port.)
-        # self.serial_port.cancel_read()
-
-        # self.serial_port.write("H".encode())
-        
-        # # while
-        # get = self.serial_port.readline().decode()
-        # print(get)
-        # self.textbox.insert('end', datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") +"  ->  " + get)
-        # # self.serial_port.write("H".encode())
-        # get = self.serial_port.readline().decode()
-        # print(get)
-        # self.textbox.insert('end', datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") +"  ->  " + get)
-        # self.serial_port.write("H".encode())
+        self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + '  ->  ' + str(self.serial_port.readline().decode()))
+        self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + '  ->  ' + str(self.serial_port.readline().decode()))
 
     def change_appearance_mode_event(self, new_appearance_mode):
         customtkinter.set_appearance_mode(new_appearance_mode)
