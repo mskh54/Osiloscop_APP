@@ -1,7 +1,7 @@
 import customtkinter
 import os
 import datetime
-
+import time
 from PIL import Image
 import tkinter 
 
@@ -19,8 +19,11 @@ class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         self.serial_port_status = False
+        self.selectport = None
         self.flag_start = False
         self.data_buffer = [1,2,3,5,5,5,0,8,2]
+        self.Numbers_get_sample = 64
+        self.sampletime ="500k"
         self.timediv = 20
         self.times = 0
         self.volt_div = 1
@@ -135,7 +138,7 @@ class App(customtkinter.CTk):
         self.read_file_frame.grid_columnconfigure(0, weight=1)
        
         self.textbox_filepath = customtkinter.CTkEntry(master=self.read_file_frame, placeholder_text="path file")
-        self.textbox_filepath.grid(row=0, column=0, padx=20, pady=20, sticky="ew") 
+        self.textbox_filepath.grid(row=0, column=0, padx=30, pady=20, sticky="ew") 
 
         self.button_select = customtkinter.CTkButton(master=self.read_file_frame, 
                                                     fg_color="transparent",
@@ -177,7 +180,7 @@ class App(customtkinter.CTk):
         
         self.update_plot_offline()
 
-        self.ani = FuncAnimation(self.fig, self.update_plot, interval=200)
+        self.ani = FuncAnimation(self.fig, self.update_plot, interval=1000)
 
        
         self.plot_edit_frame = Plot_setting_Frame(master=self.plot_main_frame,header_name="Setting",sampletime_call = self.select_sampletime ,start_call = self.button_start_callback,stop_call = self.button_stop_callback,save_plot_call =self.button_saveplot_callback)
@@ -201,16 +204,24 @@ class App(customtkinter.CTk):
         try:
             if  self.serial_port_status & self.flag_start:
                 # Read and decode serial data
-                lsb = int.from_bytes(self.serial_port.read(), "big")
-                msb = int.from_bytes(self.serial_port.read(), "big")
-                number = (msb<<8) | lsb
-                value = (number/4096)*3.3
-                
-                # Update the data buffer
-                self.data_buffer.append(value)
-                if len(self.data_buffer) > self.timediv:  # Keep a limited number of points
-                    self.data_buffer.pop(0)
-                    self.times += 1
+                self.data_buffer = []
+                for i in range(self.Numbers_get_sample):
+                    lsb = int.from_bytes(self.serial_port.read(), "big")
+                    msb = int.from_bytes(self.serial_port.read(), "big")
+                    print(lsb , msb)
+                    number = (msb<<8) | lsb
+                    print(number)
+                    value = (number/4096)*3.3
+                    print(value)
+                    if self.sampletime != "8M":
+                        lsb = int.from_bytes(self.serial_port.read(), "big")
+                        msb = int.from_bytes(self.serial_port.read(), "big")
+                    
+                    # Update the data buffer
+                    self.data_buffer.append(value)
+                # if len(self.data_buffer) > self.timediv:  # Keep a limited number of points
+                #     self.data_buffer.pop(0)
+                #     self.times += 1
                 self.update_plot_offline()
         except Exception as e:
             print(f"Error: {e}")
@@ -268,12 +279,23 @@ class App(customtkinter.CTk):
                 if self.serial_port_status:
                     self.serial_port.close()
 
-                self.serial_port = serial.Serial(port_name, baudrate=9600)
+                self.serial_port = serial.Serial(port_name, baudrate=115200)
                 self.serial_port_status = True
+                self.selectport = port_name
                 self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + f"   ->  Connected to port: {port_name}\n")
-                print(self.serial_port.read())
+                while True:
+                    get = self.serial_port.readline()
+                    if get == b'Hi\n':
+                        print(get)
+                        break
+                    else :
+                        print(get)
+                    
+
+                self.serial_port.write("H".encode())
+
                 
-                self.textbox.insert('end', datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") +"  ->  " + self.serial_port.read())
+                self.textbox.insert('end', datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") +"  ->  " + self.serial_port.readline().decode())
 
             except Exception as e:
                 print('error is ',e )
@@ -281,19 +303,19 @@ class App(customtkinter.CTk):
     def select_frame_by_name(self, name):
         # set button color for selected button
         self.home_button.configure(fg_color=("gray75", "gray25") if name == "home" else "transparent")
-        self.frame_2_button.configure(fg_color=("gray75", "gray25") if name == "frame_2" else "transparent")
-        self.frame_3_button.configure(fg_color=("gray75", "gray25") if name == "frame_3" else "transparent")
+        self.frame_2_button.configure(fg_color=("gray75", "gray25") if name == "Osiloscop" else "transparent")
+        self.frame_3_button.configure(fg_color=("gray75", "gray25") if name == "Function_Generator" else "transparent")
 
         # show selected frame
         if name == "home":
             self.home_frame.grid(row=0, column=1, sticky="nsew")
         else:
             self.home_frame.grid_forget()
-        if name == "frame_2":
+        if name == "Osiloscop":
             self.osiloscop_fram.grid(row=0, column=1, sticky="nsew")
         else:
             self.osiloscop_fram.grid_forget()
-        if name == "frame_3":
+        if name == "Function_Generator":
             self.third_frame.grid(row=0, column=1, sticky="nsew")
         else:
             self.third_frame.grid_forget()
@@ -302,10 +324,10 @@ class App(customtkinter.CTk):
         self.select_frame_by_name("home")
 
     def frame_2_button_event(self):
-        self.select_frame_by_name("frame_2")
+        self.select_frame_by_name("Osiloscop")
 
     def frame_3_button_event(self):
-        self.select_frame_by_name("frame_3")
+        self.select_frame_by_name("Function_Generator")
 
     
     def button_start_callback(self):
@@ -345,7 +367,39 @@ class App(customtkinter.CTk):
 
     def select_sampletime(self,sampletime):
         print("sample time is :",sampletime)
-        self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + '  ->  selected '+f" {sampletime} " + " sampletime Succesfully\n")
+        self.sampletime = sampletime
+        self.serial_port.write("S".encode())
+        time.sleep(0.5)
+        # self.serial_port.reset_input_buffer()
+        # self.serial_port.reset_output_buffer()
+
+        if sampletime == "8M":
+            self.serial_port.write("A".encode())
+            # self.serial_port.write(bin(self.Numbers_get_sample))
+        else :
+            self.serial_port.write("a".encode())
+            # self.serial_port.write(bin(self.Numbers_get_sample))
+        
+
+        # self.serial_port.close()
+        # self.serial_port = serial.Serial( self.selectport, baudrate=115200)
+        # test=  self.serial_port.read_all()
+        # self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + '  ->  selected '+f" {sampletime} " + " sampletime Succesfully\n")
+        
+        # print(self.serial_port.)
+        # self.serial_port.cancel_read()
+
+        # self.serial_port.write("H".encode())
+        
+        # # while
+        # get = self.serial_port.readline().decode()
+        # print(get)
+        # self.textbox.insert('end', datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") +"  ->  " + get)
+        # # self.serial_port.write("H".encode())
+        # get = self.serial_port.readline().decode()
+        # print(get)
+        # self.textbox.insert('end', datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") +"  ->  " + get)
+        # self.serial_port.write("H".encode())
 
     def change_appearance_mode_event(self, new_appearance_mode):
         customtkinter.set_appearance_mode(new_appearance_mode)
@@ -382,19 +436,19 @@ class Plot_setting_Frame(customtkinter.CTkFrame):
                                                          dynamic_resizing=False,
                                                         values=["8M","500K","50k","Realtime"],
                                                         command=self.sampletime_func)
-        self.sampletime_menu.grid(row=2, column=0, padx=20, pady=(0, 10))
+        self.sampletime_menu.grid(row=2, column=0, padx=20, pady=(0, 20))
 
-        self.combobox_label = customtkinter.CTkLabel(self, text="type line", font=(FONT_TYPE, 15))
-        self.combobox_label.grid(row=3, column=0, padx=20, pady=(10,0), sticky="w")
+        # self.combobox_label = customtkinter.CTkLabel(self, text="type line", font=(FONT_TYPE, 15))
+        # self.combobox_label.grid(row=3, column=0, padx=20, pady=(10,0), sticky="w")
 
-        self.combobox = customtkinter.CTkOptionMenu(master=self, font=self.fonts,
-                                     values=["line", "dashed", "line + marker"],
-                                     command=self.combobox_callback)
-        self.combobox.grid(row=4, column=0, padx=20, pady=(0,20), sticky="ew")
+        # self.combobox = customtkinter.CTkOptionMenu(master=self, font=self.fonts,
+        #                              values=["line", "dashed", "line + marker"],
+        #                              command=self.combobox_callback)
+        # self.combobox.grid(row=4, column=0, padx=20, pady=(0,20), sticky="ew")
        
         
         self.button_open = customtkinter.CTkButton(master=self, command=self.start, text="Start", hover_color="green",width=100 , font=self.fonts)
-        self.button_open.grid(row=5, column=0, padx=10, pady=(0,20))
+        self.button_open.grid(row=5, column=0, padx=10, pady=(20,20))
         
         self.button_open = customtkinter.CTkButton(master=self, command=self.stop, text="Stop",hover_color="red" ,width=100 , font=self.fonts)
         self.button_open.grid(row=6, column=0, padx=10, pady=(0,20))
@@ -403,19 +457,19 @@ class Plot_setting_Frame(customtkinter.CTkFrame):
         self.button_open.grid(row=7, column=0, padx=10, pady=(0,20))
 
     
-    def slider_event(self, value):
-        old_label = self.slider_label.cget("text")
-        new_label = f"scale {value}"
-        if old_label != new_label:
+    # def slider_event(self, value):
+    #     old_label = self.slider_label.cget("text")
+    #     new_label = f"scale {value}"
+    #     if old_label != new_label:
           
-            self.slider_label.configure(text=new_label)
-            self.plot_config["linewidth"] = value
-            self.master.update(config=self.plot_config)
+    #         self.slider_label.configure(text=new_label)
+    #         self.plot_config["linewidth"] = value
+    #         self.master.update(config=self.plot_config)
     
-    def combobox_callback(self,value):
+    # def combobox_callback(self,value):
 
-        self.plot_config["linetype"] = value
-        self.master.update(config=self.plot_config)
+    #     self.plot_config["linetype"] = value
+    #     self.master.update(config=self.plot_config)
 
 
 
