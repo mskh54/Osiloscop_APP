@@ -306,7 +306,7 @@ class App(customtkinter.CTk):
                 self.serial_port.write("H".encode())
 
                 
-                self.textbox.insert('end', datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") +"  ->  oscop started " ) #self.serial_port.readline().decode()
+                self.textbox.insert('end', datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") +"  ->  oscop started \n" ) #self.serial_port.readline().decode()
 
             except Exception as e:
                 print('error is ',e )
@@ -379,17 +379,47 @@ class App(customtkinter.CTk):
         print("sample time is :",sampletime)
         self.sampletime = sampletime
         # self.serial_port.write("S".encode())
-        if sampletime == "8M":
-            self.serial_port.write("A".encode())
-            # self.serial_port.write(bin(self.Numbers_get_sample))
-        else :
-            self.serial_port.write("a".encode())
-            # self.serial_port.write(bin(self.Numbers_get_sample))
-        self.serial_port.read_all()
+        match sampletime:
+            case "8M":
+                self.serial_port.write("A".encode())
+            case "1M":
+                self.serial_port.write("a1".encode())
+            case  "500K" :
+                self.serial_port.write("a2".encode())
+            case  "125k" :
+                self.serial_port.write("a3".encode())
+            case "50K":
+                self.serial_port.write("a4".encode())
+            case "10K" :
+                 self.serial_port.write("a5".encode())
+            case "1k" :
+                self.serial_port.write("a6".encode())
+            case "100" :
+                self.serial_port.write("a7".encode())
+            case "Realtime":
+                self.serial_port.write("a8".encode())
 
-        self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + '  ->  ' + str(self.serial_port.readline().decode()))
-        self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + '  ->  ' + str(self.serial_port.readline().decode()))
-
+            # self.serial_port.write(bin(self.Numbers_get_sample))
+        print(self.serial_port.read_all())
+        # time.sleep(0.1)
+        # print(self.serial_port.readline())
+        # print(self.serial_port.readline())
+        # print(self.serial_port.readline())
+        buf = self.serial_port.readline()
+        print(buf)
+        # start oscop manual config... \n
+        self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + '  ->  ' + "start oscop manual config... \n" )
+        
+        buf = self.serial_port.readline().decode()
+        print(buf)
+        self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + '  ->  ' + buf )
+        
+        buf = self.serial_port.readline().decode()
+        print(buf)
+        self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + '  ->  ' + buf )
+        # self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + '  ->  ' + str(self.serial_port.readline().decode()))
+        # self.textbox.insert('end',datetime.datetime.now().strftime("%Y-%m-%d   %H:%M:%S") + '  ->  ' + str(self.serial_port.readline().decode()))
+        print()
     def change_appearance_mode_event(self, new_appearance_mode):
         customtkinter.set_appearance_mode(new_appearance_mode)
 
@@ -423,7 +453,7 @@ class Plot_setting_Frame(customtkinter.CTkFrame):
 
         self.sampletime_menu = customtkinter.CTkOptionMenu(self,
                                                          dynamic_resizing=False,
-                                                        values=["8M","500K","50k","Realtime"],
+                                                        values=["8M", "1M", "500K", "125k", "50K", "10K", "1k", "100","Realtime"],
                                                         command=self.sampletime_func)
         self.sampletime_menu.grid(row=2, column=0, padx=20, pady=(0, 20))
 
